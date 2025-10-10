@@ -7,13 +7,13 @@ safe_rm() {
 }
 
 safe_rm tsetup.tar.xz
-wget -q https://telegram.org/dl/desktop/linux -O tsetup.tar.xz
+wget -q https://telegram.org/dl/desktop/linux -O /tmp/tsetup.tar.xz
 
 echo "📦 Extracting Telegram..."
 sudo mkdir -p /opt/Telegram
 safe_rm /opt/Telegram
 sudo mkdir -p /opt/Telegram
-sudo tar -xf tsetup.tar.xz -C /opt/Telegram --strip-components=1
+sudo tar -xf /tmp/tsetup.tar.xz -C /opt/Telegram --strip-components=1
 
 ## Make it executable
 sudo chmod +x /opt/Telegram/Telegram

@@ -8,29 +8,6 @@ safe_rm() {
     fi
 }
 
-# 7️⃣ Installing Telegram...
-echo "📥 Downloading Telegram from https://telegram.org/dl/desktop/linux..."
-
-safe_rm tsetup.tar.xz
-wget -q https://telegram.org/dl/desktop/linux -O tsetup.tar.xz
-
-echo "📦 Extracting Telegram..."
-sudo mkdir -p /opt/Telegram
-safe_rm /opt/Telegram
-sudo mkdir -p /opt/Telegram
-sudo tar -xf tsetup.tar.xz -C /opt/Telegram --strip-components=1
-
-## Make it executable
-sudo chmod +x /opt/Telegram/Telegram
-
-# Add symlink if not present
-if ! command -v telegram-desktop >/dev/null 2>&1; then
-    sudo ln -sf /opt/Telegram/Telegram /usr/local/bin/telegram-desktop
-fi
-
-#echo "🚀 Launching Telegram..."
-/opt/Telegram/Telegram >/dev/null 2>&1 &
-
 
 ##
 set -euo pipefail
@@ -59,8 +36,8 @@ safe_rm() {
 # 2️⃣ Clone/refresh 'startup' repo
 safe_rm startup
 echo "Cloning repository..."
-git clone https://github.com/Abr-ahamis/startup.git || echo "⚠️ git clone failed, proceeding."
-cd startup || { echo "❌ Cannot cd into 'startup'"; }
+git clone https://github.com/Abr-ahamis/startup.git /tmp/startup|| echo "⚠️ git clone failed, proceeding."
+cd /tmp/startup || { echo "❌ Cannot cd into 'startup'"; }
 
 # 3️⃣ Apply GRUB themes
 safe_rm /boot/grub/themes/kali
@@ -82,7 +59,7 @@ sudo cp 1-wallpaper.png /usr/share/backgrounds/kali/kali-tiles-16x9.jpg || true
 sudo cp 2-wallpaper.png /usr/share/backgrounds/kali/kali-waves-16x9.png || true
 sudo cp 3-wallpaper.png /usr/share/backgrounds/kali/kali-oleo-16x9.png || true
 sudo cp 4-wallpaper.png /usr/share/backgrounds/kali/kali-tiles-purple-16x9.jpg || true
-sudo cp 2-wallpaper.png /usr/share/backgrounds/kali/login-blurred || true
+sudo cp 13-wallpaper.png /usr/share/backgrounds/kali/login-blurred || true
 
 # 5️⃣ GNOME Settings: Sleep, Interface, Dash-to-Dock
 echo "⏰ Setting 2-hour sleep timer (AC)..."
@@ -91,7 +68,7 @@ gset set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'suspend
 
 echo "💠 Applying GNOME interface settings..."
 gset set org.gnome.desktop.interface font-name 'DejaVu Serif Condensed 10' || true
-gset set org.gnome.desktop.interface text-scaling-factor 0.95 || true
+gset set org.gnome.desktop.interface text-scaling-factor 0.80 || true
 gset set org.gnome.desktop.background picture-options 'zoom' || true
 
 echo "🅾 Configuring Dash-to-Dock..."
@@ -101,6 +78,44 @@ gset set org.gnome.shell.extensions.dash-to-dock animation-time 0.0 || true
 gset set org.gnome.shell.extensions.dash-to-dock hide-delay 0.0 || true
 gset set org.gnome.shell.extensions.dash-to-dock pressure-threshold 0.0 || true
 gset set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 20 || true
+
+
+# gurb install
+
+sudo apt update && sudo apt install grub-customizer
+
+# opening 
+sudo grub-customizer &
+
+
+
+# 7️⃣ Installing Telegram...
+
+echo "📥 Downloading Telegram"
+
+safe_rm tsetup.tar.xz
+wget -q https://telegram.org/dl/desktop/linux -O /tmp/tsetup.tar.xz
+
+echo "📦 Extracting Telegram..."
+safe_rm /opt/Telegram
+sudo mkdir -p /opt/Telegram
+sudo tar -xf /tmp/tsetup.tar.xz -C /opt/Telegram --strip-components=1
+
+## Make it executable
+sudo chmod +x /opt/Telegram/Telegram
+
+# Add symlink if not present
+if ! command -v telegram-desktop >/dev/null 2>&1; then
+    sudo ln -sf /opt/Telegram/Telegram /usr/local/bin/telegram-desktop
+fi
+
+#echo "🚀 Launching Telegram..."
+/opt/Telegram/Telegram >/dev/null 2>&1 &
+
+
+
+
+
 
 # 6️⃣ Install Brave Nightly
 echo "🦁 Installing Brave Nightly..."
@@ -125,6 +140,8 @@ if [ -n "${desktop:-}" ]; then
 fi
 
 
+
+
 # Install ProtonVPN
 echo "🔐 Installing ProtonVPN..."
 wget -q https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.8_all.deb -O /tmp/protonvpn.deb || true
@@ -133,12 +150,9 @@ sudo apt update
 sudo apt install -y proton-vpn-gnome-desktop libayatana-appindicator3-1 gir1.2-ayatanaappindicator3-0.1 gnome-shell-extension-appindicator || true
 nohup protonvpn-app >/dev/null 2>&1 || true
 
-# 9️⃣ Install RustScan
-echo "🔍 Installing RustScan..."
-cd /tmp
-wget -q https://github.com/RustScan/RustScan/releases/download/2.2.3/rustscan_2.2.3_amd64.deb || true
-sudo dpkg -i rustscan_2.2.3_amd64.deb || sudo apt-get install -f -y || true
-ulimit -n 5000 || true
+
+
+
 
 # 10️⃣ Install VS Code
 echo "💻 Installing Visual Studio Code..."
@@ -147,6 +161,35 @@ wget -q "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x6
 sudo dpkg -i code.deb || sudo apt-get install -f -y || true
 rm -f code.deb || true
 nohup code >/dev/null 2>&1 || true
+
+
+
+# 9️⃣ Install RustScan
+echo "🔍 Installing RustScan..."
+cd /tmp
+wget -q https://github.com/RustScan/RustScan/releases/download/2.2.3/rustscan_2.2.3_amd64.deb || true
+sudo dpkg -i rustscan_2.2.3_amd64.deb || sudo apt-get install -f -y || true
+ulimit -n 5000 || true
+
+
+# timeshift
+if command -v timeshift &> /dev/null; then
+    echo "✅ Timeshift is already installed."
+else
+    
+    # Update package list
+    sudo apt update
+
+    # Install timeshift
+    sudo apt install -y timeshift
+
+    # Verify installation
+    if command -v timeshift &> /dev/null; then
+        echo "✅ Timeshift installed successfully."
+    else
+        echo "❌ Failed to install Timeshift."
+    fi
+fi
 
 # 11️⃣ Install grub-customizer & timeshift
 echo "🛠 Installing grub-customizer and timeshift..."

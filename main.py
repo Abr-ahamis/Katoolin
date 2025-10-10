@@ -3,12 +3,12 @@ import os
 import sys
 import shutil
 import subprocess
+import stat
 
 # ===== Color Codes =====
 RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
-MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -24,130 +24,175 @@ def ensure_root():
             print(f"{RED}❌ Failed to gain root privileges. Exiting.{RESET}")
             sys.exit(1)
 
-# ===== Script Runner =====
-def run_script(path):
-    if path.endswith(".py"):
-        subprocess.run([sys.executable, path])
-    elif path.endswith(".sh"):
-        subprocess.run(["bash", path])
-    else:
-        print(f"{RED}⚠ Unsupported script type: {path}{RESET}")
-
 # ===== chmod +x (recursive) =====
 def run_chmod():
     print(f"{YELLOW}⚙ Setting execute permission recursively...{RESET}")
     try:
         for root, dirs, files in os.walk("."):
             for filename in files:
-                # Check if file is a script type or no extension (likely executable)
                 if filename.endswith((".py", ".sh")) or "." not in filename:
                     filepath = os.path.join(root, filename)
-                    subprocess.call(["chmod", "+x", filepath])
+                    try:
+                        mode = os.stat(filepath).st_mode
+                        os.chmod(filepath, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                    except Exception:
+                        # best-effort; continue
+                        pass
         print(f"{GREEN}✅ Executable permissions applied to scripts.{RESET}")
     except Exception as e:
         print(f"{RED}❌ chmod failed: {e}{RESET}")
 
-# ===== Get Terminal Width =====
+# ===== Terminal Width =====
 def get_terminal_width():
     try:
         width = shutil.get_terminal_size().columns
         return min(width, 100)
     except Exception:
-        return 64  # fallback
+        return 64
 
-# ===== Menu Data =====
-ubuntu_options = [
-    ("1", "Add Kali repos & update", "core/ubuntu/repo.py"),
-    ("2", "Install Kali default tools", "core/both/default.py"),
-    ("3", "Custom Installation", "core/both/Selective.py"),
-    ("4", "Custom Themes", "core/ubuntu/theme.sh"),
-    ("5", "Install common apps", "core/both/apps.py"),
-    ("6", "Uninstall tools", "core/both/uninstaller.py"),
-    ("7", "Help & diagnostics", "core/ubuntu/help.py"),
-    ("0", "Exit", None)
-]
+# ===== ASCII Art =====
+def show_ascii():
+    art = f"""{CYAN}{BOLD}
+███╗   ██╗███████╗ ██████╗     ██╗  ██╗ █████╗ ████████╗ ██████╗  ██████╗ ██╗     ██╗███╗   ██╗
+████╗  ██║██╔════╝██╔═══██╗    ██║ ██╔╝██╔══██╗╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██║████╗  ██║
+██╔██╗ ██║█████╗  ██║   ██║    █████╔╝ ███████║   ██║   ██║   ██║██║   ██║██║     ██║██╔██╗ ██║
+██║╚██╗██║██╔══╝  ██║   ██║    ██╔═██╗ ██╔══██║   ██║   ██║   ██║██║   ██║██║     ██║██║╚██╗██║
+██║ ╚████║███████╗╚██████╔╝    ██║  ██╗██║  ██║   ██║   ╚██████╔╝╚██████╔╝███████╗██║██║ ╚████║
+╚═╝  ╚═══╝╚══════╝ ╚═════╝     ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝
+{RESET}
+"""
+    print(art)
 
-kali_options = [
-    ("1", "Kali Linux Apps & custom themes", "core/kali/manu.py"),
-    ("2", "Add Kali repos & update", "core/kali/repo.py"),
-    ("3", "Install Top 10 tools", "core/kali/tools.py"),
-    ("4", "Selective install", "core/both/Selective.py"),
-    ("5", "Kali custom themes", "core/kali/theme.sh"),
-    ("6", "Kali common apps", "core/both/apps.py"),
-    ("7", "Uninstall Kali tools", "core/both/uninstaller.py"),
-    ("8", "Help & diagnostics", "core/kali/help.py"),
-    ("0", "Exit", None)
-]
-
-# ===== Draw Menus =====
+# ===== Draw Header =====
 def draw_header(title):
     width = get_terminal_width()
     print(CYAN + "=" * width + RESET)
     print(f"{BOLD}{GREEN}{title:^{width}}{RESET}")
     print(CYAN + "=" * width + RESET)
 
-def show_menu(options, title="Neo-Katoolin"):
-    while True:
-        os.system("clear")
-        draw_header(title)
+# ===== Fast Redirection (replace current process) =====
+def run_script_replace(path):
+    """
+    Replace current process with the target script for instant redirect.
+    - For .py files: execv with the Python interpreter.
+    - For .sh files: execvp 'bash'.
+    """
+    path = os.path.expanduser(path)
+    if not os.path.exists(path):
+        print(f"{RED}❌ Target not found: {path}{RESET}")
+        input(f"{YELLOW}Press Enter to continue...{RESET}")
+        return
 
-        for code, desc, _ in options:
-            print(f"{YELLOW}{code}){RESET} {desc}")
-        print(CYAN + "=" * get_terminal_width() + RESET)
+    # best-effort: make it executable
+    try:
+        mode = os.stat(path).st_mode
+        os.chmod(path, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    except Exception:
+        pass
 
-        try:
-            choice = input(f"{MAGENTA}Enter your choice: {RESET}").strip()
-        except KeyboardInterrupt:
-            print(f"\n{GREEN}Exiting... 👋{RESET}")
-            sys.exit(0)
+    if path.endswith(".py"):
+        os.execv(sys.executable, [sys.executable, path])
+    elif path.endswith(".sh"):
+        os.execvp("bash", ["bash", path])
+    else:
+        os.execvp(path, [path])
 
-        matched = False
-        for code, _, path in options:
-            if choice == code:
-                matched = True
-                if path is None:
-                    print(f"{GREEN}Exiting Neo-Katoolin. Goodbye! 👋{RESET}")
-                    sys.exit(0)
-                run_script(path)
-                run_chmod()
-                break
+# ===== Spawn & Wait (returns to menu when child exits) =====
+def run_script_spawn(path, args=None, env=None):
+    """
+    Spawn the target script as a child, wait for it to finish, then return to menu.
+    - path: script path (.py/.sh or executable)
+    - args: optional list of extra args to pass to the target
+    - env: optional environment dict to pass (defaults to os.environ)
+    """
+    path = os.path.expanduser(path)
+    if not os.path.exists(path):
+        print(f"{RED}❌ Target not found: {path}{RESET}")
+        input(f"{YELLOW}Press Enter to continue...{RESET}")
+        return False
 
-        if not matched:
-            print(f"{RED}❌ Invalid choice. Try again.{RESET}")
-            input(f"{YELLOW}Press Enter to continue...{RESET}")
+    # Ensure executable bit (best-effort)
+    try:
+        mode = os.stat(path).st_mode
+        os.chmod(path, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    except Exception:
+        pass
 
-# ===== Entry Point Menu =====
+    # Choose command based on extension
+    cmd = None
+    if path.endswith(".py"):
+        cmd = [sys.executable, path] + (args or [])
+    elif path.endswith(".sh"):
+        bash = shutil.which("bash") or "/bin/bash"
+        cmd = [bash, path] + (args or [])
+    elif os.access(path, os.X_OK):
+        cmd = [path] + (args or [])
+    else:
+        # fallback: try to run with sh
+        cmd = ["/bin/sh", path] + (args or [])
+
+    print(f"{CYAN}▶ Launching: {' '.join(cmd)}{RESET}")
+    try:
+        completed = subprocess.run(cmd, env=env or os.environ)
+        # Removed the child exit print and the "Press Enter" pause as requested.
+        return True
+    except FileNotFoundError:
+        print(f"{RED}❌ Interpreter not found for: {path}{RESET}")
+        input(f"{YELLOW}Press Enter to continue...{RESET}")
+        return False
+    except Exception as e:
+        print(f"{RED}❌ Error launching target: {e}{RESET}")
+        input(f"{YELLOW}Press Enter to continue...{RESET}")
+        return False
+
+# ===== Decide launch mode (exec vs spawn) via CLI flag --exec-launch =====
+USE_EXEC_LAUNCH = "--exec-launch" in sys.argv
+
+# ===== Main Menu =====
 def main_menu():
     while True:
         os.system("clear")
-        draw_header("Neo-Katoolin - Mode Selection")
+        show_ascii()
+        draw_header("Choose Your System")
 
-        print(f"{YELLOW}1){RESET} Ubuntu Mode")
-        print(f"{YELLOW}2){RESET} Kali Mode")
-        print(f"{YELLOW}0){RESET} Exit")
+        print(f"{BOLD}{YELLOW}[1]{RESET} Kali Linux Mode  🐉")
+        print(f"{BOLD}{YELLOW}[2]{RESET} Ubuntu Mode      🧩")
+        print(f"{BOLD}{YELLOW}[0]{RESET} Exit             ❌")
         print(CYAN + "=" * get_terminal_width() + RESET)
 
         try:
-            mode = input(f"{MAGENTA}Choose a mode: {RESET}").strip()
-        except KeyboardInterrupt:
+            mode = input(f"{CYAN}👉 Choose a mode: {RESET}").strip()
+        except (EOFError, KeyboardInterrupt):
             print(f"\n{GREEN}Exiting... 👋{RESET}")
             sys.exit(0)
 
         if mode == "1":
-            show_menu(ubuntu_options, "Neo-Katoolin - Ubuntu Mode")
+            target = "core/kali/main.py"
         elif mode == "2":
-            show_menu(kali_options, "Neo-Katoolin - Kali Mode")
+            target = "core/ubuntu/main.py"
         elif mode == "0":
-            print(f"{GREEN}Goodbye! 👋{RESET}")
+            print(f"{GREEN}👋 Goodbye!{RESET}")
             sys.exit(0)
         else:
-            print(f"{RED}Invalid input. Try again.{RESET}")
+            print(f"{RED}❌ Invalid input. Try again.{RESET}")
             input(f"{YELLOW}Press Enter to continue...{RESET}")
+            continue
+
+        # Launch using selected mode.
+        if USE_EXEC_LAUNCH:
+            # Replace current process (old behaviour). Note: menu will not return.
+            run_script_replace(target)
+            # If exec returns, something went wrong; continue loop
+            print(f"{RED}⚠ Exec launch failed; returning to menu.{RESET}")
+            input(f"{YELLOW}Press Enter to continue...{RESET}")
+        else:
+            # Spawn and wait (default) -> returns to menu after child exits
+            run_script_spawn(target)
 
 # ===== Launch =====
 if __name__ == "__main__":
     ensure_root()
-    run_chmod()  # Run chmod once at startup
+    run_chmod()
     try:
         main_menu()
     except KeyboardInterrupt:

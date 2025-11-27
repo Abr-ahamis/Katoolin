@@ -1,0 +1,31 @@
+# i3blocks config - GNOME-style
+
+separator_block_width=15
+markup=none
+
+
+[network]
+command=~/.config/i3blocks/scripts/network.sh
+interval=1
+
+#[time]
+#command=~/.config/i3blocks/scripts/time.sh
+#interval=1
+
+[memory]
+command=~/.config/i3blocks/scripts/memory.sh
+interval=10
+
+[cpu]
+command=~/.config/i3blocks/scripts/cpu.sh
+interval=5
+min_width=CPU: 100%
+
+[disk]
+command=~/.config/i3blocks/scripts/disk.sh
+interval=60
+
+[battery]
+command=~/.config/i3blocks/scripts/battery.sh
+interval=30
+                  

@@ -200,7 +200,7 @@ def main_menu():
         elif choice == '7':
             run_script("core/both/uninstaller.py")
         elif choice == '8':
-            run_script("core/kali/main.py")
+            run_script("core/kali/startup.py")
         elif choice == '0':
             print(f"{GREEN}👋 Exiting Neo-Katoolin. Goodbye!{RESET}")
             if RETURN_TARGET:

@@ -161,7 +161,8 @@ def main_menu():
         print(f"{BOLD}{GREEN}{'NEO-Katoolin Kali Installer Menu':^80}{RESET}")
         print(f"{CYAN}{'='*80}{RESET}\n")
 
-        print(f"{YELLOW}{BOLD}[1]{RESET}  🐉  Full Setup ")
+        print(f"{YELLOW}{BOLD}[1]{RESET}  🐉  Full Setup for Gnome ")
+        print(f"{YELLOW}{BOLD}[8]{RESET}  🐉  Full Setup for i3 ")
         print(f"{YELLOW}{BOLD}[2]{RESET}  🧰  Kali Top Tools")
         print(f"{YELLOW}{BOLD}[3]{RESET}  🎨  Themes Only")
         print(f"{YELLOW}{BOLD}[4]{RESET}  🔗  Add Kali Repository")
@@ -198,6 +199,8 @@ def main_menu():
             run_script("core/both/default.py")
         elif choice == '7':
             run_script("core/both/uninstaller.py")
+        elif choice == '8':
+            run_script("core/kali/main.py")
         elif choice == '0':
             print(f"{GREEN}👋 Exiting Neo-Katoolin. Goodbye!{RESET}")
             if RETURN_TARGET:
